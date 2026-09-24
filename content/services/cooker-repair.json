@@ -1,0 +1,20 @@
+{
+  "slug": "cooker-repair",
+  "order": 4,
+  "icon": "flame",
+  "card": "Induction and infrared cookers",
+  "card_text": "Induction cooktops and infrared cookers repaired in-house at the shop.",
+  "title": "Induction and infrared cooker repair in Bhaktapur",
+  "intro": "We repair induction cooktops and infrared cookers in-house at our shop in Sukuldhoka, Bhaktapur. Bring the cooker to the shop and we'll check it.",
+  "image": "",
+  "fixes": [
+    "Induction cooktops",
+    "Infrared cookers"
+  ],
+  "how": [
+    "Bring the cooker to the shop in Sukuldhoka.",
+    "We check it and tell you the price before any work starts."
+  ],
+  "questions": [],
+  "ask": "Hi, induction/infrared cooker repair bare sodhnu chha."
+}

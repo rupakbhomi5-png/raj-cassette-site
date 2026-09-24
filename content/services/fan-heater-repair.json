@@ -1,0 +1,20 @@
+{
+  "slug": "fan-heater-repair",
+  "order": 6,
+  "icon": "fan",
+  "card": "Fans and heaters",
+  "card_text": "Fans and heaters repaired at the shop.",
+  "title": "Fan and heater repair in Bhaktapur",
+  "intro": "We repair fans and heaters in-house at our shop in Sukuldhoka, Bhaktapur. Bring it to the shop and we'll check it.",
+  "image": "",
+  "fixes": [
+    "Fans",
+    "Heaters"
+  ],
+  "how": [
+    "Bring the fan or heater to the shop in Sukuldhoka.",
+    "We check it and tell you the price before any work starts."
+  ],
+  "questions": [],
+  "ask": "Hi, fan/heater repair bare sodhnu chha."
+}

@@ -1,0 +1,20 @@
+{
+  "slug": "speaker-repair",
+  "order": 3,
+  "icon": "speaker",
+  "card": "Speakers and amplifiers",
+  "card_text": "Speakers and amplifiers repaired at our Sukuldhoka shop. Bring it in.",
+  "title": "Speaker and amplifier repair in Bhaktapur",
+  "intro": "We repair speakers and amplifiers in-house at our shop in Sukuldhoka, Bhaktapur. Bring it to the shop and we'll check it.",
+  "image": "",
+  "fixes": [
+    "Speakers",
+    "Amplifiers"
+  ],
+  "how": [
+    "Bring the speaker or amplifier to the shop in Sukuldhoka.",
+    "We check it and tell you the price before any work starts."
+  ],
+  "questions": [],
+  "ask": "Hi, speaker/amplifier repair bare sodhnu chha."
+}

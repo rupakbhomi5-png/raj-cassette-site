@@ -1,0 +1,20 @@
+{
+  "slug": "mixer-repair",
+  "order": 5,
+  "icon": "utensils",
+  "card": "Mixers and grinders",
+  "card_text": "Mixers and grinders repaired at the shop.",
+  "title": "Mixer and grinder repair in Bhaktapur",
+  "intro": "We repair mixers and grinders in-house at our shop in Sukuldhoka, Bhaktapur. Bring it to the shop and we'll check it.",
+  "image": "",
+  "fixes": [
+    "Mixers",
+    "Grinders"
+  ],
+  "how": [
+    "Bring the appliance to the shop in Sukuldhoka.",
+    "We check it and tell you the price before any work starts."
+  ],
+  "questions": [],
+  "ask": "Hi, mixer/grinder repair bare sodhnu chha."
+}

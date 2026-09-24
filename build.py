@@ -1,0 +1,543 @@
+"""Builds every page of the Raj Cassette site from the files in content/.
+
+The words live in content/ (edit them in Pages CMS at app.pagescms.org, or by
+hand). This file is the page layout. Run:  python build.py
+On GitHub, .github/workflows/deploy.yml runs this and publishes the site on
+every change. See Guides/raj-cassette-website.md in the vault.
+"""
+from urllib.parse import quote
+import html
+import json
+import re
+from pathlib import Path
+
+import datetime
+# "Last updated" = the day the site was built (every content save rebuilds it).
+_TODAY = datetime.date.today()
+UPDATED = f"{_TODAY.day} {_TODAY.strftime('%B %Y')}"
+UPDATED_ISO = _TODAY.isoformat()
+# Final web address (canonical tags, sitemap, link previews). Decided 2026-09-24.
+SITE_URL = "https://rajcassette.rupakco.com"
+PHONE = "984-0270440"
+WA = "9779840270440"
+
+# Chat bubble. Empty "" = no bubble. The live chatbot runs on Render
+# (flask_app repo, service raj-cassette-chat). To test a local copy instead,
+# use "http://127.0.0.1:5000".
+CHAT_URL = "https://raj-cassette-chat.onrender.com"
+
+
+def wa(text):
+    return f"https://wa.me/{WA}?text={quote(text)}"
+
+
+# ---------------------------------------------------------------- content
+# Everything below is read from content/. Text is HTML-escaped on the way in,
+# so nothing typed in the editor can break a page or inject code.
+CONTENT = Path(__file__).parent / "content"
+LUCIDE_TO_FA = {"laptop": "fa-laptop", "printer": "fa-print", "speaker": "fa-volume-high",
+                "fan": "fa-fan", "flame": "fa-fire-burner", "utensils": "fa-blender"}
+
+
+def _esc(value):
+    if isinstance(value, str):
+        return html.escape(value.strip(), quote=False)
+    if isinstance(value, list):
+        return [_esc(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _esc(v) for k, v in value.items()}
+    return value
+
+
+def _slug(value, fallback):
+    s = re.sub(r"[^a-z0-9]+", "-", (value or fallback or "").lower()).strip("-")
+    return s or "page"
+
+
+def _load(path):
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _qa(items):
+    return [(q["question"], q["answer"]) for q in (items or []) if q.get("question") and q.get("answer")]
+
+
+SITE = _esc(_load(CONTENT / "site.json"))
+HOURS_TEXT = SITE.get("hours", "")
+SINCE = str(SITE.get("since", ""))
+HOME_FAQ = _qa(_esc(_load(CONTENT / "faq.json")).get("questions"))
+
+SERVICES = []
+for _f in sorted((CONTENT / "services").glob("*.json")):
+    _d = _esc(_load(_f))
+    SERVICES.append({
+        "slug": _slug(_d.get("slug"), _d.get("title")), "order": _d.get("order") or 99,
+        "icon": LUCIDE_TO_FA.get(_d.get("icon"), "fa-laptop"),
+        "card": _d.get("card", ""), "card_text": _d.get("card_text", ""),
+        "title": _d.get("title", ""), "intro": _d.get("intro", ""),
+        "image": (_d.get("image") or "").lstrip("/") or None,
+        "fixes": [x for x in _d.get("fixes") or [] if x], "how": [x for x in _d.get("how") or [] if x],
+        "faq": _qa(_d.get("questions")), "ask": _d.get("ask", "Hi, repair bare sodhnu chha."),
+    })
+SERVICES.sort(key=lambda s: (s["order"], s["title"]))
+
+TIPS = []
+for _f in sorted((CONTENT / "tips").glob("*.json")):
+    _d = _esc(_load(_f))
+    TIPS.append({
+        "slug": _slug(_d.get("slug"), _d.get("title")), "date": _d.get("date") or UPDATED_ISO,
+        "title": _d.get("title", ""), "summary": _d.get("summary", ""), "answer": _d.get("answer", ""),
+        "points": [x for x in _d.get("points") or [] if x], "shop": _d.get("shop") or "",
+        "ask": _d.get("ask", "Hi, repair bare sodhnu chha."),
+    })
+TIPS.sort(key=lambda t: t["date"], reverse=True)
+
+
+def image_size_attrs(path):
+    """width/height from the real file, so the page doesn't jump while loading."""
+    try:
+        from PIL import Image
+        with Image.open(path) as im:
+            return f'width="{im.width}" height="{im.height}"'
+    except Exception:
+        return ""
+
+
+def _unesc(value):
+    if isinstance(value, str):
+        return html.unescape(value)
+    if isinstance(value, list):
+        return [_unesc(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _unesc(v) for k, v in value.items()}
+    return value
+
+
+# ---------------------------------------------------------------- layout
+def page(title, description, body, path="", jsonld=None, og_type="website"):
+    url = f"{SITE_URL}/{path}"
+    t = html.escape(html.unescape(title), quote=True)
+    d = html.escape(html.unescape(description), quote=True)
+    ld = ""
+    if jsonld:
+        # "</" escaped so nothing in the data can close the script tag early.
+        ld = '\n    <script type="application/ld+json">' + json.dumps(_unesc(jsonld), ensure_ascii=False).replace("</", "<\\/") + "</script>"
+    return f"""<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{t}</title>
+    <meta name="description" content="{d}">
+    <link rel="canonical" href="{url}">
+    <meta property="og:type" content="{og_type}">
+    <meta property="og:site_name" content="Raj Cassette">
+    <meta property="og:title" content="{t}">
+    <meta property="og:description" content="{d}">
+    <meta property="og:url" content="{url}">
+    <meta property="og:image" content="{SITE_URL}/img/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Raj Cassette logo">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{t}">
+    <meta name="twitter:description" content="{d}">
+    <meta name="twitter:image" content="{SITE_URL}/img/og-image.jpg">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+    <link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="style.css">{ld}
+</head>
+<body class="bg-white text-gray-800 antialiased flex flex-col min-h-screen">
+{header()}
+{body}
+{footer()}
+</body>
+</html>
+"""
+
+
+def header():
+    return f"""    <header class="bg-white border-b border-gray-100 sticky top-0 z-50 px-4 sm:px-6 py-3 sm:py-4">
+        <div class="max-w-6xl mx-auto flex flex-row justify-between items-center gap-4">
+            <a href="index.html" class="flex items-center gap-3 shrink-0">
+                <img src="img/logo.webp" alt="Raj Cassette" width="300" height="117" class="h-11 sm:h-14 w-auto">
+                <span class="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-widest border-l border-gray-200 pl-3">Repairs</span>
+            </a>
+            <nav class="flex items-center gap-4 sm:gap-6">
+                <a href="index.html#services" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Services</a>
+                <a href="tips.html" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Repair tips</a>
+                <a href="index.html#contact" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Contact</a>
+                <a href="https://wa.me/{WA}" class="inline-flex items-center justify-center whitespace-nowrap px-4 sm:px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition shadow-sm">
+                    <i class="fa-brands fa-whatsapp mr-2"></i> {PHONE}
+                </a>
+            </nav>
+        </div>
+    </header>"""
+
+
+def footer():
+    links = "".join(f'<a href="{s["slug"]}.html" class="hover:text-white">{s["card"]}</a>' for s in SERVICES)
+    return f"""    <footer id="contact" class="py-16 px-6 bg-blue-600 text-white mt-auto">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl font-bold mb-10">Visit the shop</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left bg-blue-700/50 p-8 rounded-2xl border border-blue-500/30">
+                <div class="flex items-start space-x-4">
+                    <div class="mt-1 text-blue-300 text-xl"><i class="fa-solid fa-map-location-dot"></i></div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">Location</h3>
+                        <p class="text-blue-100 font-light">Raj Cassette<br>Sukuldhoka, Bhaktapur 44800<br>Nepal</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-4">
+                    <div class="mt-1 text-blue-300 text-xl"><i class="fa-brands fa-whatsapp"></i></div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-1">WhatsApp</h3>
+                        <p class="text-blue-100 font-light"><a class="underline" href="https://wa.me/{WA}">{PHONE}</a></p>
+                        <p class="text-blue-100 text-sm mt-2">{HOURS_TEXT}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-blue-100">{links}<a href="tips.html" class="hover:text-white">Repair tips</a></div>
+            <div class="mt-8 text-sm text-blue-200 font-light">Last updated {UPDATED} &middot; &copy; 2026 Raj Cassette, Bhaktapur</div>
+        </div>
+    </footer>{chat_script()}"""
+
+
+def chat_script():
+    if not CHAT_URL:
+        return ""
+    return f'\n    <script src="{CHAT_URL}/embed.js" defer></script>'
+
+
+def ask_button(text, label="Ask about this on WhatsApp"):
+    return f"""<a href="{wa(text)}" class="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition shadow-md"><i class="fa-brands fa-whatsapp mr-2"></i>{label}</a>"""
+
+
+def faq_block(items, ask_prefix):
+    out = []
+    for q, a in items:
+        out.append(f"""                <article class="bg-white rounded-2xl p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">{q}</h3>
+                    <p class="text-gray-600 leading-relaxed">{a}</p>
+                    <a href="{wa(ask_prefix + ' ' + q)}" class="inline-flex items-center mt-3 text-sm font-semibold text-blue-600 hover:text-blue-800"><i class="fa-brands fa-whatsapp mr-1.5"></i>Ask a follow-up</a>
+                </article>""")
+    return "\n".join(out)
+
+
+def placeholder_class(text):
+    return ' placeholder rounded px-2' if text.startswith("[") else ""
+
+
+# ---------------------------------------------------------------- pages
+def service_page(s):
+    fixes = "".join(f'<li class="flex gap-3"><i class="fa-solid fa-check text-blue-600 mt-1"></i><span class="{placeholder_class(f).strip()}">{f}</span></li>' for f in s["fixes"])
+    how = "".join(f'<li class="flex gap-4"><span class="w-7 h-7 shrink-0 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">{i}</span><span class="pt-0.5">{h}</span></li>' for i, h in enumerate(s["how"], 1))
+    img = ""
+    if s["image"] and Path(s["image"]).exists():
+        img = f"""<figure class="mt-10"><img src="{s["image"]}" alt="{s["title"]}" {image_size_attrs(s["image"])} class="w-full max-h-96 object-cover rounded-2xl"></figure>"""
+    faq = ""
+    if s["faq"]:
+        faq = f"""<section class="mt-14"><h2 class="text-2xl font-bold text-gray-900 mb-6">Common questions</h2><div class="space-y-4">{faq_block(s["faq"], "Question:")}</div></section>"""
+    body = f"""    <main class="px-6 py-14 sm:py-20">
+        <div class="max-w-3xl mx-auto">
+            <a href="index.html#services" class="text-sm font-medium text-blue-600 hover:text-blue-800"><i class="fa-solid fa-arrow-left mr-1"></i> All services</a>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mt-4 mb-5">{s["title"]}</h1>
+            <p class="text-lg text-gray-600 leading-relaxed">{s["intro"]}</p>
+            <div class="mt-8">{ask_button(s["ask"])}</div>
+            {img}
+            <section class="mt-14"><h2 class="text-2xl font-bold text-gray-900 mb-6">What we fix</h2><ul class="space-y-3 text-gray-700">{fixes}</ul></section>
+            <section class="mt-14"><h2 class="text-2xl font-bold text-gray-900 mb-6">How it works</h2><ol class="space-y-4 text-gray-700">{how}</ol></section>
+            {faq}
+            <p class="mt-14 text-sm text-gray-400">Last updated {UPDATED}</p>
+        </div>
+    </main>"""
+    return page(f"{s['title']} | Raj Cassette", s["intro"][:155], body,
+                path=f"{s['slug']}.html", jsonld=breadcrumbs([("Home", ""), (s["card"], None)]))
+
+
+def tip_page(t):
+    points = "".join(f'<li class="flex gap-3"><i class="fa-solid fa-circle-check text-blue-600 mt-1"></i><span>{p}</span></li>' for p in t["points"])
+    shop_cls = "placeholder rounded-xl p-4 text-sm" if t["shop"].startswith("[") else "bg-blue-50 text-blue-900 rounded-xl p-4"
+    shop_html = f'<p class="mt-8 {shop_cls}">{t["shop"]}</p>' if t["shop"] else ""
+    body = f"""    <main class="px-6 py-14 sm:py-20">
+        <article class="max-w-3xl mx-auto">
+            <a href="tips.html" class="text-sm font-medium text-blue-600 hover:text-blue-800"><i class="fa-solid fa-arrow-left mr-1"></i> All repair tips</a>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mt-4 mb-5">{t["title"]}</h1>
+            <p class="text-lg text-gray-800 leading-relaxed font-medium">{t["answer"]}</p>
+            <ul class="mt-8 space-y-3 text-gray-700">{points}</ul>
+            {shop_html}
+            <div class="mt-10">{ask_button(t["ask"], "Ask us on WhatsApp")}</div>
+            <p class="mt-10 text-sm text-gray-400">Written by Rupak Bhomi, Raj Cassette, Bhaktapur &middot; Last updated {UPDATED}</p>
+        </article>
+    </main>"""
+    article = {
+        "@type": "Article",
+        "headline": t["title"],
+        "description": t["answer"],
+        "image": f"{SITE_URL}/img/og-image.jpg",
+        "datePublished": t["date"],
+        "dateModified": UPDATED_ISO,
+        "author": {"@type": "Person", "name": "Rupak Bhomi"},
+        "publisher": {"@id": f"{SITE_URL}/#business"},
+        "mainEntityOfPage": f"{SITE_URL}/{t['slug']}.html",
+    }
+    crumbs = breadcrumbs([("Home", ""), ("Repair tips", "tips.html"), (t["title"], None)])
+    graph = {"@context": "https://schema.org", "@graph": [article, {k: v for k, v in crumbs.items() if k != "@context"}]}
+    return page(f"{t['title']} | Raj Cassette", t["answer"][:155], body,
+                path=f"{t['slug']}.html", jsonld=graph, og_type="article")
+
+
+def tips_index():
+    cards = "".join(f"""<a href="{t["slug"]}.html" class="block bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition"><h2 class="text-lg font-bold text-gray-900 mb-2">{t["title"]}</h2><p class="text-gray-600 text-sm">{t["summary"]}</p><span class="inline-block mt-3 text-sm font-semibold text-blue-600">Read <i class="fa-solid fa-arrow-right ml-1"></i></span></a>""" for t in TIPS)
+    body = f"""    <main class="px-6 py-14 sm:py-20 bg-gray-50">
+        <div class="max-w-3xl mx-auto">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">Repair tips</h1>
+            <p class="text-lg text-gray-600 mb-10">Short, practical tips from our repair shop in Bhaktapur.</p>
+            <div class="space-y-4">{cards}</div>
+        </div>
+    </main>"""
+    return page("Repair tips | Raj Cassette, Bhaktapur", "Short, practical laptop, printer and electronics repair tips from Raj Cassette in Bhaktapur.", body,
+                path="tips.html", jsonld=breadcrumbs([("Home", ""), ("Repair tips", None)]))
+
+
+def home():
+    cards = "".join(f"""<a href="{s["slug"]}.html" class="group bg-gray-50 rounded-2xl p-8 flex flex-col items-center text-center border border-transparent hover:bg-white hover:border-gray-200 hover:shadow-xl transition"><div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-6"><i class="fa-solid {s["icon"]}"></i></div><h3 class="text-xl font-bold text-gray-900 mb-3">{s["card"]}</h3><p class="text-gray-500 text-sm leading-relaxed">{s["card_text"]}</p><span class="mt-4 text-sm font-semibold text-blue-600 group-hover:text-blue-800">More <i class="fa-solid fa-arrow-right ml-1"></i></span></a>""" for s in SERVICES)
+    tips = "".join(f"""<a href="{t["slug"]}.html" class="block bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition"><h3 class="font-bold text-gray-900 mb-1">{t["title"]}</h3><p class="text-gray-500 text-sm">{t["summary"]}</p></a>""" for t in TIPS)
+    body = f"""    <section class="relative bg-gray-50 overflow-hidden py-16 sm:py-24 lg:py-28 px-6">
+        <div class="max-w-6xl mx-auto text-center flex flex-col items-center">
+            <span class="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold tracking-wide mb-6">Checked in person before any price</span>
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight mb-6 max-w-4xl">Laptop and electronics repair in <span class="text-blue-600">Bhaktapur.</span></h1>
+            <p class="text-lg sm:text-xl text-gray-600 mb-10 max-w-2xl font-light leading-relaxed">{SITE.get("home_intro", "")}</p>
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
+                <a href="{wa('Hi, repair bare sodhnu chha.')}" class="px-8 py-4 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition shadow-md w-full sm:w-auto"><i class="fa-brands fa-whatsapp mr-2"></i>Message on WhatsApp</a>
+                <a href="#questions" class="px-8 py-4 bg-white text-gray-700 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition w-full sm:w-auto">Common questions</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="py-20 px-6 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16"><h2 class="text-3xl font-bold text-gray-900 mb-4">What we repair</h2><div class="h-1 w-20 bg-blue-600 mx-auto rounded"></div></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">{cards}</div>
+        </div>
+    </section>
+
+    <section id="questions" class="py-20 px-6 bg-gray-50">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-12"><h2 class="text-3xl font-bold text-gray-900 mb-4">Common questions</h2><div class="h-1 w-20 bg-blue-600 mx-auto rounded"></div></div>
+            <div class="space-y-6">
+{faq_block(HOME_FAQ, "Question:")}
+            </div>
+            <div class="text-center mt-10"><p class="text-gray-600 mb-4">Question not here?</p>{ask_button("Hi, mero prashna: ", "Ask your question on WhatsApp")}</div>
+        </div>
+    </section>
+
+    <section id="tips" class="py-20 px-6 bg-white">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-12"><h2 class="text-3xl font-bold text-gray-900 mb-4">Repair tips</h2><div class="h-1 w-20 bg-blue-600 mx-auto rounded"></div></div>
+            <div class="space-y-4">{tips}</div>
+            <div class="text-center mt-8"><a href="tips.html" class="text-sm font-semibold text-blue-600 hover:text-blue-800">All repair tips <i class="fa-solid fa-arrow-right ml-1"></i></a></div>
+        </div>
+    </section>
+
+    <section id="about" class="py-20 px-6 bg-gray-50">
+        <div class="max-w-3xl mx-auto flex flex-col sm:flex-row gap-8 items-center">
+            <img src="img/rupak.jpg" alt="Rupak Bhomi, Raj Cassette, Bhaktapur" width="144" height="144" class="w-36 h-36 rounded-full object-cover shrink-0 border-4 border-white shadow-sm">
+            <div>
+                <p class="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-2">Who answers your WhatsApp</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-3">Rupak Bhomi, Raj Cassette</h2>
+                <p class="text-gray-600 leading-relaxed">{SITE.get("bio", "")}</p>
+            </div>
+        </div>
+    </section>"""
+    return page("Raj Cassette | Laptop and Electronics Repair in Bhaktapur",
+                html.unescape(SITE.get("home_description", "")),
+                body, path="", jsonld=home_jsonld())
+
+
+# ---------------------------------------------------------------- structured data
+# Phone numbers match the Google Business listing (decided 2026-09-24):
+# landline primary, the repair WhatsApp as customer service. No ratings (none
+# verifiable). Hours and founding year from Rupak, 2026-09-24.
+LANDLINE_INTL = "+977-1-6613547"
+WHATSAPP_INTL = "+977-9840270440"
+
+
+def breadcrumbs(items):
+    out = []
+    for i, (name, path) in enumerate(items, 1):
+        entry = {"@type": "ListItem", "position": i, "name": name}
+        if path is not None:
+            entry["item"] = f"{SITE_URL}/{path}"
+        out.append(entry)
+    return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": out}
+
+
+def home_jsonld():
+    business = {
+        "@type": "ElectronicsStore",
+        "@id": f"{SITE_URL}/#business",
+        "name": "Raj Cassette",
+        "url": f"{SITE_URL}/",
+        "logo": f"{SITE_URL}/img/og-image.jpg",
+        "image": f"{SITE_URL}/img/og-image.jpg",
+        "description": "Electronics shop in Sukuldhoka, Bhaktapur, selling and repairing electronic goods since 1996. Repairs Windows laptops, small printer problems, speakers, amplifiers, fans, heaters, induction and infrared cookers, mixers and grinders. Laptop pickup and drop inside Bhaktapur. Every item is checked in person before any price is given.",
+        "foundingDate": SINCE,
+        "openingHoursSpecification": [{
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            "opens": "09:00",
+            "closes": "19:00",
+        }],
+        "telephone": LANDLINE_INTL,
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": WHATSAPP_INTL,
+            "contactType": "customer service",
+            "description": "WhatsApp",
+            "availableLanguage": ["en", "ne"],
+        },
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Sukuldhoka",
+            "addressLocality": "Bhaktapur",
+            "postalCode": "44800",
+            "addressCountry": "NP",
+        },
+        "areaServed": {"@type": "City", "name": "Bhaktapur"},
+        "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Repair services",
+            "itemListElement": [
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": sv["title"], "url": f"{SITE_URL}/{sv['slug']}.html"}}
+                for sv in SERVICES
+            ],
+        },
+    }
+    website = {"@type": "WebSite", "@id": f"{SITE_URL}/#website", "name": "Raj Cassette", "url": f"{SITE_URL}/", "inLanguage": "en"}
+    faq = {
+        "@type": "FAQPage",
+        "mainEntity": [
+            {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
+            for q, a in HOME_FAQ
+        ],
+    }
+    return {"@context": "https://schema.org", "@graph": [business, website, faq]}
+
+
+# ---------------------------------------------------------------- icons
+# Built-in SVG icons (no outside icon font). Lucide icons (ISC licence) and the
+# Simple Icons WhatsApp logo (CC0), stored in src/icons/. The page code above
+# still says <i class="fa-... fa-NAME ..."></i>; write() swaps those for SVGs.
+ICON_FILES = {
+    "fa-laptop": "laptop", "fa-print": "printer", "fa-volume-high": "speaker",
+    "fa-fire-burner": "flame", "fa-blender": "utensils", "fa-whatsapp": "whatsapp",
+    "fa-arrow-left": "arrow-left", "fa-arrow-right": "arrow-right", "fa-check": "check",
+    "fa-circle-check": "circle-check", "fa-map-location-dot": "map-pin", "fa-fan": "fan",
+}
+_ICON_CACHE = {}
+
+
+def _icon_svg(fa_name, extra_classes):
+    if fa_name not in _ICON_CACHE:
+        raw = (Path(__file__).parent / "src" / "icons" / f"{ICON_FILES[fa_name]}.svg").read_text(encoding="utf-8")
+        raw = re.sub(r"<!--.*?-->", "", raw, flags=re.S)
+        raw = re.sub(r"<title>.*?</title>", "", raw)
+        raw = re.sub(r"\s+", " ", raw).strip()
+        raw = re.sub(r'\s(class|width|height|role)="[^"]*"', "", raw)
+        if "stroke=" not in raw:  # filled logo (WhatsApp)
+            raw = raw.replace("<svg", '<svg fill="currentColor"', 1)
+        _ICON_CACHE[fa_name] = raw
+    cls = ("icon " + extra_classes).strip()
+    return _ICON_CACHE[fa_name].replace("<svg", f'<svg class="{cls}" aria-hidden="true" focusable="false"', 1)
+
+
+def replace_icons(page_html):
+    def sub(m):
+        classes = m.group(1).split()
+        name = next(c for c in classes if c in ICON_FILES)
+        extra = " ".join(c for c in classes if not c.startswith("fa-"))
+        return _icon_svg(name, extra)
+    out = re.sub(r'<i class="([^"]*\bfa-[^"]*)"></i>', sub, page_html)
+    assert "fa-" not in re.sub(r'"icon": "fa-[a-z-]+"', "", out), "an icon was not converted"
+    return out
+
+
+def write(name, page_html):
+    with open(name, "w", encoding="utf-8") as f:
+        f.write(replace_icons(page_html) if name.endswith(".html") else page_html)
+    print("wrote", name)
+
+
+def robots_txt():
+    return f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}/sitemap.xml\n"
+
+
+def sitemap_xml():
+    paths = [""] + ["tips.html"] + [f"{sv['slug']}.html" for sv in SERVICES] + [f"{t['slug']}.html" for t in TIPS]
+    urls = "".join(f"  <url><loc>{SITE_URL}/{p}</loc><lastmod>{UPDATED_ISO}</lastmod></url>\n" for p in paths)
+    return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
+
+
+def llms_txt():
+    services = "\n".join(f"- {sv['title']}: {SITE_URL}/{sv['slug']}.html" for sv in SERVICES)
+    tips = "\n".join(f"- {t['title']}: {SITE_URL}/{t['slug']}.html" for t in TIPS)
+    return f"""# Raj Cassette
+
+> Electronics shop in Sukuldhoka, Bhaktapur, Nepal, selling and repairing electronic goods since 1996. Repairs Windows laptops, small printer problems, speakers, amplifiers, fans, heaters, induction and infrared cookers, mixers and grinders. Laptop pickup and drop inside Bhaktapur.
+
+Key facts:
+- Location: Sukuldhoka, Bhaktapur 44800, Nepal. Service area: Bhaktapur only.
+- Contact: WhatsApp {PHONE}. Landline 01-6613547.
+- Opening hours: {HOURS_TEXT}
+- Every item is checked in person before any price is given. No prices are quoted online.
+- Windows laptops only: no MacBooks, iPads or other tablets.
+- Last updated: {UPDATED_ISO}
+
+## Services
+{services}
+
+## Repair tips
+{tips}
+"""
+
+
+if __name__ == "__main__":
+    import os
+    # Always write the pages next to this file, wherever it's run from.
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    print("building in", os.getcwd())
+    write("index.html", home())
+    write("tips.html", tips_index())
+    for s in SERVICES:
+        write(f"{s['slug']}.html", service_page(s))
+    for t in TIPS:
+        write(f"{t['slug']}.html", tip_page(t))
+    write("robots.txt", robots_txt())
+    write("sitemap.xml", sitemap_xml())
+    write("llms.txt", llms_txt())
+
+    # Then show the site at http://localhost:8000 (your laptop only).
+    # Stop it with Ctrl+C. To only build without starting it: python build.py --no-serve
+    import sys
+    if "--no-serve" not in sys.argv:
+        import http.server
+        import socketserver
+        import webbrowser
+
+        PORT = 8000
+        socketserver.TCPServer.allow_reuse_address = True
+        try:
+            server = socketserver.TCPServer(("127.0.0.1", PORT), http.server.SimpleHTTPRequestHandler)
+        except OSError:
+            print(f"\nPort {PORT} is already in use: the site is probably already running.")
+            print(f"Open http://localhost:{PORT} in Brave and press Ctrl+F5.")
+            sys.exit(0)
+        print(f"\nSite running at http://localhost:{PORT}  (press Ctrl+C here to stop)")
+        webbrowser.open(f"http://localhost:{PORT}")
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print("\nStopped.")

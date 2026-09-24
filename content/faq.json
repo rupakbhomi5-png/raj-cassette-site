@@ -1,0 +1,36 @@
+{
+  "questions": [
+    {
+      "question": "Do you repair laptops in Bhaktapur?",
+      "answer": "Yes. We repair Windows laptops: screen, battery, keyboard, RAM and software problems. Bring it to our shop in Sukuldhoka, Bhaktapur, or message us on WhatsApp for pickup and drop inside Bhaktapur."
+    },
+    {
+      "question": "Can you tell me the repair price on WhatsApp?",
+      "answer": "No. We check the laptop in person first, then give you the price. A price given without seeing the laptop is usually wrong, so we don't guess."
+    },
+    {
+      "question": "Do you pick up the laptop from my home?",
+      "answer": "Yes, anywhere inside Bhaktapur. We collect the laptop, repair it, and bring it back to you. Send your area and the problem to 984-0270440 on WhatsApp."
+    },
+    {
+      "question": "Do you repair MacBooks or tablets?",
+      "answer": "No. We repair Windows laptops only, not MacBooks, iPads or other tablets."
+    },
+    {
+      "question": "Do you repair printers?",
+      "answer": "Yes, small printer problems. Send the printer model and what's wrong to 984-0270440 on WhatsApp, and we'll tell you whether we can fix it."
+    },
+    {
+      "question": "What else do you repair?",
+      "answer": "Speakers, amplifiers, fans, heaters, induction and infrared cookers, mixers and grinders are repaired at our shop in Sukuldhoka, Bhaktapur. Bring the item to the shop."
+    },
+    {
+      "question": "What are your opening hours?",
+      "answer": "Sunday to Friday, 9am to 7pm. Closed on Saturday."
+    },
+    {
+      "question": "Which areas do you cover?",
+      "answer": "Bhaktapur only. Laptop pickup and drop runs inside Bhaktapur. Anyone can bring an item to the shop in Sukuldhoka."
+    }
+  ]
+}

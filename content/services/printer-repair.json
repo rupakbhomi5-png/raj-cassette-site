@@ -1,0 +1,25 @@
+{
+  "slug": "printer-repair",
+  "order": 2,
+  "icon": "printer",
+  "card": "Printers",
+  "card_text": "Small printer problems. Send the printer model and the problem on WhatsApp first.",
+  "title": "Printer repair in Bhaktapur",
+  "intro": "We fix small printer problems in Bhaktapur. Send the printer model and what's wrong on WhatsApp first, and we'll tell you whether we can fix it before you bring it in.",
+  "image": "",
+  "fixes": [
+    "Small printer problems. Send the printer model and the problem on WhatsApp first, and we tell you whether we can fix it."
+  ],
+  "how": [
+    "Send the exact printer model (it's printed on the front or back label) and the problem on WhatsApp.",
+    "We tell you whether we can fix it.",
+    "Bring the printer to the shop in Sukuldhoka."
+  ],
+  "questions": [
+    {
+      "question": "Do you have cartridges for my printer?",
+      "answer": "Send us the exact printer model first. Cartridges only fit specific models, and two models with similar numbers can take different cartridges."
+    }
+  ],
+  "ask": "Hi, printer repair bare sodhnu chha. Printer model: "
+}

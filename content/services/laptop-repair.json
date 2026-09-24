@@ -1,0 +1,39 @@
+{
+  "slug": "laptop-repair",
+  "order": 1,
+  "icon": "laptop",
+  "card": "Windows laptops",
+  "card_text": "Screen, battery, keyboard, RAM and software problems. Pickup and drop inside Bhaktapur.",
+  "title": "Windows laptop repair in Bhaktapur",
+  "intro": "We repair Windows laptops in Bhaktapur: screen, battery, keyboard, RAM and software problems. Bring it to our shop in Sukuldhoka, or we pick it up from your home inside Bhaktapur and bring it back after the repair.",
+  "image": "",
+  "fixes": [
+    "Broken or dark screen",
+    "Battery that drains fast, won't charge, or is swollen",
+    "Keyboard keys that don't work",
+    "RAM upgrades and replacement",
+    "Slow laptop, Windows problems, virus cleanup"
+  ],
+  "how": [
+    "Message us on WhatsApp with the laptop model and the problem.",
+    "Bring the laptop to the shop, or we pick it up from your home inside Bhaktapur.",
+    "We check it in person and tell you the price before any work starts.",
+    "For expensive parts that have to be ordered, we confirm with you before ordering.",
+    "We repair it and hand it back, or drop it back at your home."
+  ],
+  "questions": [
+    {
+      "question": "Can you tell me the price on WhatsApp?",
+      "answer": "No. We check the laptop in person first, then give you the price. A price given without seeing the laptop is usually wrong, so we don't guess."
+    },
+    {
+      "question": "Do you repair MacBooks?",
+      "answer": "No. We repair Windows laptops only, not MacBooks, iPads or other tablets."
+    },
+    {
+      "question": "Do you pick up the laptop from my home?",
+      "answer": "Yes, anywhere inside Bhaktapur. Send your area and the problem to 984-0270440 on WhatsApp."
+    }
+  ],
+  "ask": "Hi, laptop repair bare sodhnu chha."
+}

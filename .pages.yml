@@ -1,0 +1,152 @@
+# Pages CMS editor (app.pagescms.org). Log in with GitHub, open this repo,
+# and edit through these forms. Every Save updates GitHub, and the GitHub
+# Action (.github/workflows/deploy.yml) rebuilds and publishes the site.
+media:
+  input: img
+  output: /img
+
+content:
+  - name: tips
+    label: Repair tips (articles)
+    type: collection
+    path: content/tips
+    format: json
+    filename: '{fields.slug}.json'
+    view:
+      fields: [title, date]
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+      - name: slug
+        label: Page address
+        type: string
+        required: true
+        description: "Short, lowercase, words joined with dashes, e.g. tip-laptop-overheating. Becomes the page address. Don't change it after publishing."
+      - name: date
+        label: Date
+        type: date
+        options:
+          format: yyyy-MM-dd
+      - name: summary
+        label: One-line summary (shown in the list of tips)
+        type: text
+      - name: answer
+        label: The answer, in one or two sentences (shown first)
+        type: text
+        required: true
+      - name: points
+        label: Points
+        type: string
+        list: true
+      - name: shop
+        label: From our shop (optional, one true line)
+        type: text
+      - name: ask
+        label: WhatsApp message the button pre-types
+        type: string
+
+  - name: faq
+    label: Home page questions
+    type: file
+    path: content/faq.json
+    format: json
+    fields:
+      - name: questions
+        label: Questions
+        type: object
+        list: true
+        fields:
+          - name: question
+            label: Question
+            type: string
+            required: true
+          - name: answer
+            label: Answer (start with "Yes." or "No." or the direct answer)
+            type: text
+            required: true
+
+  - name: services
+    label: Services
+    type: collection
+    path: content/services
+    format: json
+    filename: '{fields.slug}.json'
+    view:
+      fields: [card, order]
+    fields:
+      - name: card
+        label: Name on the home page card
+        type: string
+        required: true
+      - name: slug
+        label: Page address
+        type: string
+        required: true
+        description: "Short, lowercase, words joined with dashes, e.g. tv-repair. Don't change it after publishing."
+      - name: order
+        label: Position on the home page (1 = first)
+        type: number
+      - name: icon
+        label: Icon
+        type: select
+        options:
+          values: [laptop, printer, speaker, fan, flame, utensils]
+      - name: card_text
+        label: Short text on the card
+        type: string
+      - name: title
+        label: Page heading
+        type: string
+        required: true
+      - name: intro
+        label: Intro (the direct answer first)
+        type: text
+      - name: image
+        label: Photo (your own, real repair)
+        type: image
+      - name: fixes
+        label: What we fix
+        type: string
+        list: true
+      - name: how
+        label: How it works (steps)
+        type: string
+        list: true
+      - name: questions
+        label: Questions about this service
+        type: object
+        list: true
+        fields:
+          - name: question
+            label: Question
+            type: string
+          - name: answer
+            label: Answer
+            type: text
+      - name: ask
+        label: WhatsApp message the button pre-types
+        type: string
+
+  - name: site
+    label: Shop details
+    type: file
+    path: content/site.json
+    format: json
+    fields:
+      - name: hours
+        label: Opening hours
+        type: string
+      - name: since
+        label: In business since (year)
+        type: string
+      - name: home_intro
+        label: Home page intro
+        type: text
+      - name: home_description
+        label: Google description of the home page (about 150 characters)
+        type: text
+      - name: bio
+        label: About you (next to your photo)
+        type: text
