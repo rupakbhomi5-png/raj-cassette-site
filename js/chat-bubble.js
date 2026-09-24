@@ -92,6 +92,50 @@
   }, 90000);
 
   var isOpen = false;
+  var OPEN_DESKTOP =
+    "position:fixed;bottom:20px;right:20px;width:380px;height:min(640px,80vh);border:none;border-radius:16px;" +
+    "box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:2147483000;background:transparent;" +
+    "transition:width .2s ease,height .2s ease,border-radius .2s ease;";
+  // Phones: a sheet 88% of the screen tall, not full screen, so a dimmed strip
+  // of the page stays visible above it. Tapping that strip closes the chat.
+  var OPEN_PHONE =
+    "position:fixed;left:0;right:0;bottom:0;width:100vw;height:88dvh;border:none;border-radius:16px 16px 0 0;" +
+    "box-shadow:0 -8px 32px rgba(0,0,0,.3);z-index:2147483000;background:transparent;" +
+    "transition:width .2s ease,height .2s ease,border-radius .2s ease;";
+
+  var backdrop = document.createElement("div");
+  backdrop.setAttribute("aria-hidden", "true");
+  backdrop.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2147482999;display:none;";
+  document.body.appendChild(backdrop);
+
+  // One place that opens or closes the widget. fromBack = the phone's Back
+  // button already removed our history entry, so don't remove it again.
+  function setOpen(open, fromBack) {
+    if (open === isOpen) return;
+    isOpen = open;
+    if (open) {
+      var phone = window.matchMedia("(max-width: 480px)").matches;
+      iframe.style.cssText = phone ? OPEN_PHONE : OPEN_DESKTOP;
+      backdrop.style.display = phone ? "block" : "none";
+      // Back button closes the chat instead of leaving the site.
+      try { history.pushState({ rupakcoChat: true }, ""); } catch (err) {}
+    } else {
+      iframe.style.cssText = CLOSED_CSS;
+      // Keep the strip up a moment so the closing tap can't fall through
+      // onto a link underneath it.
+      setTimeout(function () { if (!isOpen) backdrop.style.display = "none"; }, 350);
+      if (!fromBack && history.state && history.state.rupakcoChat) {
+        try { history.back(); } catch (err) {}
+      }
+    }
+  }
+
+  function collapse(fromBack) {
+    if (!isOpen) return;
+    setOpen(false, fromBack);
+    iframe.contentWindow.postMessage({ type: "rupakco-widget-collapse" }, "*");
+  }
 
   window.addEventListener("message", function (e) {
     if (e.source !== iframe.contentWindow) return;
@@ -106,28 +150,20 @@
       return;
     }
     if (e.data.type !== "rupakco-widget-resize") return;
-    isOpen = e.data.state === "open";
-    var mobile = window.matchMedia("(max-width: 480px)").matches;
-    if (isOpen) {
-      iframe.style.cssText = mobile
-        ? "position:fixed;bottom:0;right:0;width:100vw;height:100dvh;border:none;border-radius:0;box-shadow:none;z-index:2147483000;background:transparent;transition:width .2s ease,height .2s ease,border-radius .2s ease;"
-        : "position:fixed;bottom:20px;right:20px;width:380px;height:min(640px,80vh);border:none;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:2147483000;background:transparent;transition:width .2s ease,height .2s ease,border-radius .2s ease;";
-    } else {
-      iframe.style.cssText = CLOSED_CSS;
-    }
+    setOpen(e.data.state === "open");
   });
+
+  window.addEventListener("popstate", function () { collapse(true); });
+  backdrop.addEventListener("click", function () { collapse(false); });
 
   // Clicking anywhere on the host page outside the iframe collapses the
   // widget back to the bubble. A click landing inside the iframe never
   // reaches this listener (it's a separate document), so any mousedown
-  // seen here is, by definition, an outside click — no coordinate math needed.
+  // seen here is, by definition, an outside click.
   document.addEventListener("mousedown", function (e) {
     if (note && ready === false && !placeholder.contains(e.target) && !note.contains(e.target)) {
       note.remove(); note = null; pendingOpen = false;
     }
-    if (!isOpen) return;
-    isOpen = false;
-    iframe.style.cssText = CLOSED_CSS;
-    iframe.contentWindow.postMessage({ type: "rupakco-widget-collapse" }, "*");
+    collapse(false);
   });
 })();
