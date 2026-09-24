@@ -63,6 +63,11 @@ def headers_file():
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+# Cloudflare's own copy of the site: keep it out of Google so it can't
+# compete with the real address.
+https://raj-cassette-site.pages.dev/*
+  X-Robots-Tag: noindex
 """
 
 

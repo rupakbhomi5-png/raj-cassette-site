@@ -14,3 +14,5 @@ llms.txt
 _headers
 _site/
 __pycache__/
+.unlazy/
+.unlazy-hook-state.json
