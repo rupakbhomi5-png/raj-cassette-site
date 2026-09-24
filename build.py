@@ -28,7 +28,7 @@ CHAT_URL = "https://raj-cassette-chat.onrender.com"
 
 
 # Security policy (Lazy Developer: Security Headers). Only our own files may
-# load, plus the chat bubble's script and window from CHAT_URL. No forms, no
+# load, plus the chat window from CHAT_URL (the bubble script is ours). No forms, no
 # plugins, nothing else. The same policy goes in every page's <meta> tag
 # (all GitHub Pages allows) and in _headers as real headers (for hosts that
 # read that file, e.g. Cloudflare Pages). If you add anything from another
@@ -37,7 +37,7 @@ def csp(as_header=False):
     chat = CHAT_URL.rstrip("/")
     rules = [
         "default-src 'self'",
-        f"script-src 'self' {chat}".strip(),
+        "script-src 'self'",
         "style-src 'self'",
         "img-src 'self' data:",
         "font-src 'self'",
@@ -258,7 +258,11 @@ def footer():
 def chat_script():
     if not CHAT_URL:
         return ""
-    return f'\n    <script src="{CHAT_URL}/embed.js" defer></script>'
+    # The bubble script is served from this site (js/chat-bubble.js), so it
+    # shows instantly even while the free chat server wakes (up to ~50s).
+    # data-chat: where the chat window loads from. data-whatsapp: shown on the
+    # "starting up" note, so nobody is left without a way to ask.
+    return f'\n    <script src="js/chat-bubble.js" data-chat="{CHAT_URL}" data-whatsapp="{WA}" defer></script>'
 
 
 def ask_button(text, label="Ask about this on WhatsApp"):

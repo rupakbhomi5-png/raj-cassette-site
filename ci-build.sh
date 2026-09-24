@@ -11,6 +11,6 @@ npx -y tailwindcss@3.4.17 -i src/input.css -o style.css --minify
 rm -rf _site
 mkdir _site
 cp *.html style.css robots.txt sitemap.xml llms.txt _headers favicon.ico favicon.png _site/
-cp -r img fonts _site/
+cp -r img fonts js _site/
 find _site -name '*LOCAL-ONLY*' -delete
 echo "built into _site/"
