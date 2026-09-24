@@ -26,25 +26,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Pillow (reads photo sizes)
-        run: pip install "pillow>=10,<12"
-
-      - name: Build pages
-        run: python build.py --no-serve
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Build styles
-        run: npx -y tailwindcss@3.4.17 -i src/input.css -o style.css --minify
-
-      - name: Collect public files
-        run: |
-          mkdir _site
-          cp *.html style.css robots.txt sitemap.xml llms.txt _headers favicon.ico favicon.png _site/
-          cp -r img fonts _site/
-          find _site -name '*LOCAL-ONLY*' -delete
+      - name: Build the site into _site/ (same script Cloudflare Pages runs)
+        run: bash ci-build.sh
 
       - uses: actions/upload-pages-artifact@v3
         with:
