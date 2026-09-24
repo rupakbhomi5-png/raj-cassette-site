@@ -206,14 +206,14 @@ def page(title, description, body, path="", jsonld=None, og_type="website", base
 def header():
     return f"""    <header class="bg-white border-b border-gray-100 sticky top-0 z-50 px-4 sm:px-6 py-3 sm:py-4">
         <div class="max-w-6xl mx-auto flex flex-row justify-between items-center gap-4">
-            <a href="index.html" class="flex items-center gap-3 shrink-0">
+            <a href="/" class="flex items-center gap-3 shrink-0">
                 <img src="img/logo.webp" alt="Raj Cassette" width="300" height="117" class="h-11 sm:h-14 w-auto">
                 <span class="hidden sm:block text-xs font-semibold text-gray-500 uppercase tracking-widest border-l border-gray-200 pl-3">Repairs</span>
             </a>
             <nav class="flex items-center gap-4 sm:gap-6">
-                <a href="index.html#services" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Services</a>
-                <a href="tips.html" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Repair tips</a>
-                <a href="index.html#contact" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Contact</a>
+                <a href="/#services" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Services</a>
+                <a href="tips" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Repair tips</a>
+                <a href="/#contact" class="hidden md:inline text-sm font-medium text-gray-600 hover:text-blue-600">Contact</a>
                 <a href="https://wa.me/{WA}" class="inline-flex items-center justify-center whitespace-nowrap px-4 sm:px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-full hover:bg-blue-700 transition shadow-sm">
                     <i class="fa-brands fa-whatsapp mr-2"></i> {PHONE}
                 </a>
@@ -223,7 +223,7 @@ def header():
 
 
 def footer():
-    links = "".join(f'<a href="{s["slug"]}.html" class="hover:text-white">{s["card"]}</a>' for s in SERVICES)
+    links = "".join(f'<a href="{s["slug"]}" class="hover:text-white">{s["card"]}</a>' for s in SERVICES)
     return f"""    <footer id="contact" class="py-16 px-6 bg-blue-600 text-white mt-auto">
         <div class="max-w-4xl mx-auto text-center">
             <h2 class="text-3xl font-bold mb-10">Visit the shop</h2>
@@ -244,7 +244,7 @@ def footer():
                     </div>
                 </div>
             </div>
-            <div class="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-blue-100">{links}<a href="tips.html" class="hover:text-white">Repair tips</a></div>
+            <div class="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-blue-100">{links}<a href="tips" class="hover:text-white">Repair tips</a></div>
             <div class="mt-8 text-sm text-blue-200 font-light">Last updated {UPDATED} &middot; &copy; 2026 Raj Cassette, Bhaktapur</div>
         </div>
     </footer>{chat_script()}"""
@@ -287,7 +287,7 @@ def service_page(s):
         faq = f"""<section class="mt-14"><h2 class="text-2xl font-bold text-gray-900 mb-6">Common questions</h2><div class="space-y-4">{faq_block(s["faq"], "Question:")}</div></section>"""
     body = f"""    <main class="px-6 py-14 sm:py-20">
         <div class="max-w-3xl mx-auto">
-            <a href="index.html#services" class="text-sm font-medium text-blue-600 hover:text-blue-800"><i class="fa-solid fa-arrow-left mr-1"></i> All services</a>
+            <a href="/#services" class="text-sm font-medium text-blue-600 hover:text-blue-800"><i class="fa-solid fa-arrow-left mr-1"></i> All services</a>
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mt-4 mb-5">{s["title"]}</h1>
             <p class="text-lg text-gray-600 leading-relaxed">{s["intro"]}</p>
             <div class="mt-8">{ask_button(s["ask"])}</div>
@@ -299,7 +299,7 @@ def service_page(s):
         </div>
     </main>"""
     return page(f"{s['title']} | Raj Cassette", s["intro"][:155], body,
-                path=f"{s['slug']}.html", jsonld=breadcrumbs([("Home", ""), (s["card"], None)]))
+                path=f"{s['slug']}", jsonld=breadcrumbs([("Home", ""), (s["card"], None)]))
 
 
 def tip_page(t):
@@ -308,7 +308,7 @@ def tip_page(t):
     shop_html = f'<p class="mt-8 {shop_cls}">{t["shop"]}</p>' if t["shop"] else ""
     body = f"""    <main class="px-6 py-14 sm:py-20">
         <article class="max-w-3xl mx-auto">
-            <a href="tips.html" class="text-sm font-medium text-blue-600 hover:text-blue-800"><i class="fa-solid fa-arrow-left mr-1"></i> All repair tips</a>
+            <a href="tips" class="text-sm font-medium text-blue-600 hover:text-blue-800"><i class="fa-solid fa-arrow-left mr-1"></i> All repair tips</a>
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mt-4 mb-5">{t["title"]}</h1>
             <p class="text-lg text-gray-800 leading-relaxed font-medium">{t["answer"]}</p>
             <ul class="mt-8 space-y-3 text-gray-700">{points}</ul>
@@ -326,16 +326,16 @@ def tip_page(t):
         "dateModified": UPDATED_ISO,
         "author": {"@type": "Person", "name": "Rupak Bhomi"},
         "publisher": {"@id": f"{SITE_URL}/#business"},
-        "mainEntityOfPage": f"{SITE_URL}/{t['slug']}.html",
+        "mainEntityOfPage": f"{SITE_URL}/{t['slug']}",
     }
-    crumbs = breadcrumbs([("Home", ""), ("Repair tips", "tips.html"), (t["title"], None)])
+    crumbs = breadcrumbs([("Home", ""), ("Repair tips", "tips"), (t["title"], None)])
     graph = {"@context": "https://schema.org", "@graph": [article, {k: v for k, v in crumbs.items() if k != "@context"}]}
     return page(f"{t['title']} | Raj Cassette", t["answer"][:155], body,
-                path=f"{t['slug']}.html", jsonld=graph, og_type="article")
+                path=f"{t['slug']}", jsonld=graph, og_type="article")
 
 
 def tips_index():
-    cards = "".join(f"""<a href="{t["slug"]}.html" class="block bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition"><h2 class="text-lg font-bold text-gray-900 mb-2">{t["title"]}</h2><p class="text-gray-600 text-sm">{t["summary"]}</p><span class="inline-block mt-3 text-sm font-semibold text-blue-600">Read <i class="fa-solid fa-arrow-right ml-1"></i></span></a>""" for t in TIPS)
+    cards = "".join(f"""<a href="{t["slug"]}" class="block bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition"><h2 class="text-lg font-bold text-gray-900 mb-2">{t["title"]}</h2><p class="text-gray-600 text-sm">{t["summary"]}</p><span class="inline-block mt-3 text-sm font-semibold text-blue-600">Read <i class="fa-solid fa-arrow-right ml-1"></i></span></a>""" for t in TIPS)
     body = f"""    <main class="px-6 py-14 sm:py-20 bg-gray-50">
         <div class="max-w-3xl mx-auto">
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">Repair tips</h1>
@@ -344,7 +344,7 @@ def tips_index():
         </div>
     </main>"""
     return page("Repair tips | Raj Cassette, Bhaktapur", "Short, practical laptop, printer and electronics repair tips from Raj Cassette in Bhaktapur.", body,
-                path="tips.html", jsonld=breadcrumbs([("Home", ""), ("Repair tips", None)]))
+                path="tips", jsonld=breadcrumbs([("Home", ""), ("Repair tips", None)]))
 
 
 def not_found_page():
@@ -355,7 +355,7 @@ def not_found_page():
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-5">This page doesn't exist.</h1>
             <p class="text-lg text-gray-600 mb-8">The link may be old or mistyped. Go back to the home page, or ask us about your repair on WhatsApp.</p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="index.html" class="inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full border border-gray-200 font-semibold text-gray-800 hover:bg-gray-50"><i class="fa-solid fa-arrow-left"></i> Home page</a>
+                <a href="/" class="inline-flex justify-center items-center gap-2 px-6 py-3 rounded-full border border-gray-200 font-semibold text-gray-800 hover:bg-gray-50"><i class="fa-solid fa-arrow-left"></i> Home page</a>
                 {ask_button("Hi, repair bare sodhnu chha.", "Message us on WhatsApp")}
             </div>
         </div>
@@ -364,8 +364,8 @@ def not_found_page():
 
 
 def home():
-    cards = "".join(f"""<a href="{s["slug"]}.html" class="group bg-gray-50 rounded-2xl p-8 flex flex-col items-center text-center border border-transparent hover:bg-white hover:border-gray-200 hover:shadow-xl transition"><div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-6"><i class="fa-solid {s["icon"]}"></i></div><h3 class="text-xl font-bold text-gray-900 mb-3">{s["card"]}</h3><p class="text-gray-500 text-sm leading-relaxed">{s["card_text"]}</p><span class="mt-4 text-sm font-semibold text-blue-600 group-hover:text-blue-800">More <i class="fa-solid fa-arrow-right ml-1"></i></span></a>""" for s in SERVICES)
-    tips = "".join(f"""<a href="{t["slug"]}.html" class="block bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition"><h3 class="font-bold text-gray-900 mb-1">{t["title"]}</h3><p class="text-gray-500 text-sm">{t["summary"]}</p></a>""" for t in TIPS)
+    cards = "".join(f"""<a href="{s["slug"]}" class="group bg-gray-50 rounded-2xl p-8 flex flex-col items-center text-center border border-transparent hover:bg-white hover:border-gray-200 hover:shadow-xl transition"><div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-6"><i class="fa-solid {s["icon"]}"></i></div><h3 class="text-xl font-bold text-gray-900 mb-3">{s["card"]}</h3><p class="text-gray-500 text-sm leading-relaxed">{s["card_text"]}</p><span class="mt-4 text-sm font-semibold text-blue-600 group-hover:text-blue-800">More <i class="fa-solid fa-arrow-right ml-1"></i></span></a>""" for s in SERVICES)
+    tips = "".join(f"""<a href="{t["slug"]}" class="block bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-md transition"><h3 class="font-bold text-gray-900 mb-1">{t["title"]}</h3><p class="text-gray-500 text-sm">{t["summary"]}</p></a>""" for t in TIPS)
     body = f"""    <section class="relative bg-gray-50 overflow-hidden py-16 sm:py-24 lg:py-28 px-6">
         <div class="max-w-6xl mx-auto text-center flex flex-col items-center">
             <span class="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold tracking-wide mb-6">Checked in person before any price</span>
@@ -399,7 +399,7 @@ def home():
         <div class="max-w-3xl mx-auto">
             <div class="text-center mb-12"><h2 class="text-3xl font-bold text-gray-900 mb-4">Repair tips</h2><div class="h-1 w-20 bg-blue-600 mx-auto rounded"></div></div>
             <div class="space-y-4">{tips}</div>
-            <div class="text-center mt-8"><a href="tips.html" class="text-sm font-semibold text-blue-600 hover:text-blue-800">All repair tips <i class="fa-solid fa-arrow-right ml-1"></i></a></div>
+            <div class="text-center mt-8"><a href="tips" class="text-sm font-semibold text-blue-600 hover:text-blue-800">All repair tips <i class="fa-solid fa-arrow-right ml-1"></i></a></div>
         </div>
     </section>
 
@@ -472,7 +472,7 @@ def home_jsonld():
             "@type": "OfferCatalog",
             "name": "Repair services",
             "itemListElement": [
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": sv["title"], "url": f"{SITE_URL}/{sv['slug']}.html"}}
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": sv["title"], "url": f"{SITE_URL}/{sv['slug']}"}}
                 for sv in SERVICES
             ],
         },
@@ -537,14 +537,14 @@ def robots_txt():
 
 
 def sitemap_xml():
-    paths = [""] + ["tips.html"] + [f"{sv['slug']}.html" for sv in SERVICES] + [f"{t['slug']}.html" for t in TIPS]
+    paths = [""] + ["tips"] + [f"{sv['slug']}" for sv in SERVICES] + [f"{t['slug']}" for t in TIPS]
     urls = "".join(f"  <url><loc>{SITE_URL}/{p}</loc><lastmod>{UPDATED_ISO}</lastmod></url>\n" for p in paths)
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
 
 
 def llms_txt():
-    services = "\n".join(f"- {sv['title']}: {SITE_URL}/{sv['slug']}.html" for sv in SERVICES)
-    tips = "\n".join(f"- {t['title']}: {SITE_URL}/{t['slug']}.html" for t in TIPS)
+    services = "\n".join(f"- {sv['title']}: {SITE_URL}/{sv['slug']}" for sv in SERVICES)
+    tips = "\n".join(f"- {t['title']}: {SITE_URL}/{t['slug']}" for t in TIPS)
     return f"""# Raj Cassette
 
 > Electronics shop in Sukuldhoka, Bhaktapur, Nepal, selling and repairing electronic goods since 1996. Repairs Windows laptops, small printer problems, speakers, amplifiers, fans, heaters, induction and infrared cookers, mixers and grinders. Laptop pickup and drop inside Bhaktapur.
@@ -593,7 +593,15 @@ if __name__ == "__main__":
         PORT = 8000
         socketserver.TCPServer.allow_reuse_address = True
         try:
-            server = socketserver.TCPServer(("127.0.0.1", PORT), http.server.SimpleHTTPRequestHandler)
+            # Links use clean addresses (/tips, not /tips.html), like the live
+            # host. This makes the laptop preview answer /tips with tips.html.
+            class CleanURLHandler(http.server.SimpleHTTPRequestHandler):
+                def send_head(self):
+                    clean = self.path.split("?")[0].split("#")[0]
+                    if clean != "/" and "." not in clean.rsplit("/", 1)[-1] and Path(clean.lstrip("/") + ".html").exists():
+                        self.path = clean + ".html"
+                    return super().send_head()
+            server = socketserver.TCPServer(("127.0.0.1", PORT), CleanURLHandler)
         except OSError:
             print(f"\nPort {PORT} is already in use: the site is probably already running.")
             print(f"Open http://localhost:{PORT} in Brave and press Ctrl+F5.")
