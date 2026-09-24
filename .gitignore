@@ -11,5 +11,6 @@ style.css
 robots.txt
 sitemap.xml
 llms.txt
+_headers
 _site/
 __pycache__/

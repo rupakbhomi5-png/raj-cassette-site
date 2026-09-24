@@ -42,7 +42,7 @@ jobs:
       - name: Collect public files
         run: |
           mkdir _site
-          cp *.html style.css robots.txt sitemap.xml llms.txt favicon.ico favicon.png _site/
+          cp *.html style.css robots.txt sitemap.xml llms.txt _headers favicon.ico favicon.png _site/
           cp -r img fonts _site/
           find _site -name '*LOCAL-ONLY*' -delete
 
